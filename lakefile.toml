@@ -1,0 +1,23 @@
+name = "MeeksYau"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["MeeksYau"]
+
+[leanOptions]
+pp.unicode.fun = true
+autoImplicit = false
+maxSynthPendingDepth = 3
+weak.linter.mathlibStandardSet = true
+linter.style.header = false
+linter.style.longLine = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.35.0-rc3"
+
+[[lean_lib]]
+name = "DifferentialGeometry"
+
+[[lean_lib]]
+name = "MeeksYau"

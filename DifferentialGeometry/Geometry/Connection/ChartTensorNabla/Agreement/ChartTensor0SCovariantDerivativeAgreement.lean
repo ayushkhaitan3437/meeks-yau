@@ -1,0 +1,137 @@
+import DifferentialGeometry.Geometry.Connection.ChartTensorNabla.Tensor0S.ChartTensor0SCovariantDerivative
+import DifferentialGeometry.Geometry.Connection.ChartTensorNabla.Tensor0S.Tensor0SChartChristoffel
+import DifferentialGeometry.Geometry.Connection.LeviCivita.Defs
+open DifferentialGeometry.Geometry.Curvature
+
+
+noncomputable section
+
+
+open Bundle Manifold Set
+open scoped Manifold Topology ContDiff
+open DifferentialGeometry.Tensor0SBundle
+
+
+namespace DifferentialGeometry
+namespace Geometry
+namespace Connection
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [CompleteSpace E]
+  [NeZero (Module.finrank ℝ E)]
+variable {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [T2Space M] [BoundarylessManifold I M]
+
+open DifferentialGeometry.Integral.Measure
+open DifferentialGeometry.Integral.DivergenceTheorem
+open DifferentialGeometry.Tensor0SNabla
+
+omit [FiniteDimensional ℝ E] [CompleteSpace E] [NeZero (Module.finrank ℝ E)] [T2Space M]
+    [BoundarylessManifold I M] in
+private lemma tensor0Iso_symm_apply_empty (x : M) (a : ℝ) :
+    (show ContinuousMultilinearMap ℝ (fun _ : Fin 0 => TangentSpace I x) ℝ from
+        ((tensor0Iso (I := I) (M := M) x).symm a))
+      (fun i => Fin.elim0 i) = a := by
+  classical
+  let T₀ : Π y : M, Tensor0SSpace 0 I y :=
+    fun y => if h : y = x then h ▸ ((tensor0Iso (I := I) (M := M) x).symm a) else 0
+  have hT0x : T₀ x = (tensor0Iso (I := I) (M := M) x).symm a := by
+    simp [T₀]
+  have hscalarFn :
+      (show ContinuousMultilinearMap ℝ (fun _ : Fin 0 => TangentSpace I x) ℝ from
+          T₀ x) (0 : Fin 0 → TangentSpace I x) = scalarFn I M T₀ x :=
+    (scalarFn_eq_apply_zero (I := I) (M := M) T₀ x).symm
+  have hscalar :
+      scalarFn I M T₀ x = a := by
+    change (tensor0Iso (I := I) (M := M) x) (T₀ x) = a
+    rw [hT0x]
+    exact (tensor0Iso (I := I) (M := M) x).apply_symm_apply a
+  have h_inputs : (fun i : Fin 0 => Fin.elim0 i) =
+      (0 : Fin 0 → TangentSpace I x) :=
+    Subsingleton.elim _ _
+  rw [h_inputs]
+  rw [← hT0x]
+  rw [hscalarFn, hscalar]
+
+omit [FiniteDimensional ℝ E] [CompleteSpace E] [NeZero (Module.finrank ℝ E)] [IsManifold I ∞ M]
+    [T2Space M] [BoundarylessManifold I M] in
+private lemma mvfderiv_apply_scalar (f : M → ℝ) (x : M) (v : TangentSpace I x) :
+    mvfderiv (I := I) f x v =
+      tangentSpaceModelContinuousLinearEquiv (I := 𝓘(ℝ)) (f x)
+        (mfderiv I 𝓘(ℝ) f x v) := by
+  simp only [mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  simp only [NormedSpace.fromTangentSpace]
+  rfl
+
+omit [FiniteDimensional ℝ E] [CompleteSpace E] [NeZero (Module.finrank ℝ E)] [T2Space M]
+    [BoundarylessManifold I M] in
+private lemma mfderiv_section_zero_eq_scalarFn
+    (T : Π b : M, Tensor0SSpace 0 I b) (b : M) (v : TangentSpace I b) :
+    tangentSpaceModelContinuousLinearEquiv
+        (I := 𝓘(ℝ)) (Tensor0SSpace.eval (T b) (fun i => Fin.elim0 i))
+        (mfderiv I 𝓘(ℝ)
+          (fun b' : M => Tensor0SSpace.eval (T b') (fun i => Fin.elim0 i)) b v) =
+      tangentSpaceModelContinuousLinearEquiv
+        (I := 𝓘(ℝ)) (scalarFn I M T b)
+        (mfderiv I 𝓘(ℝ) (scalarFn I M T) b v) := by
+  classical
+  have h_funeq :
+      (fun b' : M =>
+          Tensor0SSpace.eval (T b') (fun i => Fin.elim0 i)) =
+        scalarFn I M T := by
+    funext b'
+    rw [Tensor0SSpace.eval_eq]
+    rw [scalarFn_eq_apply_zero (I := I) (M := M) T b']
+    congr 1
+    funext i
+    exact i.elim0
+  rw [h_funeq]
+  rfl
+
+omit [CompleteSpace E] in
+omit [NeZero (Module.finrank ℝ E)] in
+theorem chartTensor0SCovariantDerivative_eq_abstract_zero
+    (g : SmoothRiemannianMetric I M) (α : M)
+    (T : Π b : M, Tensor0SSpace 0 I b) (X : Π b : M, TangentSpace I b)
+    {b : M} :
+    chartTensor0SCovariantDerivative (I := I) 0 g α T X b =
+      Tensor0SNabla.tensor0SCovariantDerivative I M 0
+          (LeviCivita (I := I) g) T b (X b) := by
+  classical
+  apply tensor0SSpace_ext
+  intro m
+  change Tensor0SSpace.eval
+      (chartTensor0SCovariantDerivative (I := I) 0 g α T X b) m =
+    Tensor0SSpace.eval
+      (Tensor0SNabla.tensor0SCovariantDerivative I M 0
+        (LeviCivita (I := I) g) T b (X b)) m
+  have hm : m = (fun i : Fin 0 => Fin.elim0 i) := by
+    funext i; exact i.elim0
+  subst hm
+  rw [chartTensor0SCovariantDerivative_zero_apply
+      (I := I) g α T X b (fun i : Fin 0 => Fin.elim0 i)]
+  rw [tensor0SCovariantDerivative_apply_zero
+      (I := I) (M := M) (LeviCivita (I := I) g) T b (X b)]
+  calc
+    tangentSpaceModelContinuousLinearEquiv
+        (I := 𝓘(ℝ)) (Tensor0SSpace.eval (T b) (fun i => Fin.elim0 i))
+        (mfderiv I 𝓘(ℝ)
+          (fun b' : M => Tensor0SSpace.eval (T b') (fun i => Fin.elim0 i)) b (X b)) =
+        tangentSpaceModelContinuousLinearEquiv
+          (I := 𝓘(ℝ)) (scalarFn I M T b)
+          (mfderiv I 𝓘(ℝ) (scalarFn I M T) b (X b)) :=
+      mfderiv_section_zero_eq_scalarFn (I := I) (M := M) T b (X b)
+    _ = mvfderiv (I := I) (scalarFn I M T) b (X b) :=
+      (mvfderiv_apply_scalar (I := I) (scalarFn I M T) b (X b)).symm
+    _ = Tensor0SSpace.eval
+        ((tensor0Iso I M b).symm
+          (mvfderiv (I := I) (scalarFn I M T) b (X b)))
+        (fun i : Fin 0 => Fin.elim0 i) :=
+      ((Tensor0SSpace.eval_eq _ _).trans
+        (tensor0Iso_symm_apply_empty (I := I) (M := M) b
+          (mvfderiv (I := I) (scalarFn I M T) b (X b)))).symm
+
+end Connection
+end Geometry
+end DifferentialGeometry

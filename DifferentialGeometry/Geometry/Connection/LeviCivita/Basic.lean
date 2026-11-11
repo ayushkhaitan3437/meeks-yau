@@ -1,0 +1,91 @@
+import DifferentialGeometry.Geometry.Connection.MetricCompatibility.Defs
+import DifferentialGeometry.Geometry.Metric.Family.Basic
+import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+open DifferentialGeometry.Geometry.Curvature
+
+set_option autoImplicit false
+
+namespace DifferentialGeometry.Geometry.Connection
+
+open Bundle
+open scoped Manifold ContDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace Real E]
+variable {H : Type*} [TopologicalSpace H]
+variable {I : ModelWithCorners Real E H}
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+section Pointwise
+
+variable [FiniteDimensional Real E] [CompleteSpace E]
+variable [SigmaCompactSpace M] [T2Space M]
+
+def IsTorsionFreeAt
+    (cov : CovariantDerivative I E (TangentSpace I : M -> Type _)) (x : M) : Prop :=
+  cov.torsion x = 0
+
+
+def IsLeviCivitaAt
+    (cov : CovariantDerivative I E (TangentSpace I : M -> Type _))
+    (g : SmoothRiemannianMetric I M) (x : M) : Prop :=
+  IsMetricCompatibleOn cov.toFun g {x} /\ IsTorsionFreeAt (I := I) cov x
+
+def IsTorsionFree
+    (cov : CovariantDerivative I E (TangentSpace I : M -> Type _)) : Prop :=
+  forall x : M, IsTorsionFreeAt (I := I) cov x
+
+
+def IsLeviCivita
+    (cov : CovariantDerivative I E (TangentSpace I : M -> Type _))
+    (g : SmoothRiemannianMetric I M) : Prop :=
+  IsMetricCompatible (I := I) cov g /\ IsTorsionFree (I := I) cov
+
+omit [SigmaCompactSpace M] [T2Space M] in
+theorem metricCompatible_of_isLeviCivita
+    {cov : CovariantDerivative I E (TangentSpace I : M -> Type _)}
+    {g : SmoothRiemannianMetric I M}
+    (h : IsLeviCivita (I := I) cov g) :
+    IsMetricCompatible (I := I) cov g :=
+  h.1
+
+omit [SigmaCompactSpace M] [T2Space M] in
+theorem torsionFree_of_isLeviCivita
+    {cov : CovariantDerivative I E (TangentSpace I : M -> Type _)}
+    {g : SmoothRiemannianMetric I M}
+    (h : IsLeviCivita (I := I) cov g) :
+    IsTorsionFree (I := I) cov :=
+  h.2
+
+omit [SigmaCompactSpace M] [T2Space M] in
+theorem isLeviCivita_of_parts
+    {cov : CovariantDerivative I E (TangentSpace I : M -> Type _)}
+    {g : SmoothRiemannianMetric I M}
+    (hmc : IsMetricCompatible (I := I) cov g)
+    (htf : IsTorsionFree (I := I) cov) :
+    IsLeviCivita (I := I) cov g :=
+  ⟨hmc, htf⟩
+
+end Pointwise
+
+section Family
+
+variable [FiniteDimensional Real E] [CompleteSpace E]
+variable [SigmaCompactSpace M] [T2Space M]
+
+
+def IsTorsionFreeFamilyOn
+    {D : RealTimeInterval}
+    (G : MetricConnectionFamilyOn (I := I) (M := M) D) : Prop :=
+  forall t : RealTimeInterval.FlowTime D,
+    IsTorsionFree (I := I) (G.connectionAt t)
+
+
+def IsLeviCivitaFamilyOn
+    {D : RealTimeInterval}
+    (G : MetricConnectionFamilyOn (I := I) (M := M) D) : Prop :=
+  forall t : RealTimeInterval.FlowTime D,
+    IsLeviCivita (I := I) (G.connectionAt t) (G.metricAt t)
+
+end Family
+
+end DifferentialGeometry.Geometry.Connection

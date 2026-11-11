@@ -1,0 +1,5 @@
+PASS: 397 target modules; 3609 upstream Lean modules.
+PASS: 3910 upstream files match their recorded SHA-256 hashes.
+PASS: complete, acyclic, reachable project import closure; 861 external direct imports.
+PASS: toolchain and all external package pins match upstream; no proof-admission markers found.
+These are source-packaging checks, not Lean compilation or an axiom audit.
